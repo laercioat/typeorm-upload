@@ -1,5 +1,5 @@
-// import AppError from '../errors/AppError';
 import { getCustomRepository, getRepository } from 'typeorm';
+import AppError from '../errors/AppError';
 import Transaction from '../models/Transaction';
 import Category from '../models/Category';
 import TransactionsRepository from '../repositories/TransactionsRepository';
@@ -19,36 +19,32 @@ class CreateTransactionService {
     category,
   }: Request): Promise<Transaction> {
     if (type !== 'income' && type !== 'outcome') {
-      throw Error('Type is incorrect');
+      throw new AppError('Type is incorrect');
     }
-    console.log(category);
-    if (category) {
-      console.log(
-        'Existe algo no category_id, fazer a lógica para verificar se já existe no banco',
-      );
-      const categoryRepository = getRepository(Category);
-      /*
-      const checkCategoryExists = await categoryRepository.findOne({
-        where: category,
-      });
-      if (!checkCategoryExists) {
-        const categoryCreated = categoryRepository.create({
-          title: category,
-        });
-        await categoryRepository.save(categoryCreated);
-        //category = categoryCreated.id;
-      }
-*/
-    }
-    console.log('Inserir na base de dados');
+
     const transactionRepository = getCustomRepository(TransactionsRepository);
+    const { total } = await transactionRepository.getBalance();
+    if (type === 'outcome' && total < value) {
+      throw new AppError('No enouth balance available for this transaction');
+    }
+    const categoryRepository = getRepository(Category);
+    let transactionCategory = await categoryRepository.findOne({
+      where: { title: category },
+    });
+    if (!transactionCategory) {
+      transactionCategory = categoryRepository.create({
+        title: category,
+      });
+      await categoryRepository.save(transactionCategory);
+    }
     const transaction = transactionRepository.create({
       title,
       type,
       value,
-      //     category_id: category,
+      category: transactionCategory,
     });
     await transactionRepository.save(transaction);
+
     return transaction;
   }
 }

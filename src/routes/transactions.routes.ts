@@ -30,6 +30,7 @@ transactionsRouter.post('/', async (request, response) => {
   response.json(transaction);
 });
 
+/*
 transactionsRouter.delete('/:id', async (request, response) => {
   // TODO
 });
@@ -37,5 +38,5 @@ transactionsRouter.delete('/:id', async (request, response) => {
 transactionsRouter.post('/import', async (request, response) => {
   // TODO
 });
-
+*/
 export default transactionsRouter;
